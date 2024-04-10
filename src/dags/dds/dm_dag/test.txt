@@ -1,0 +1,34 @@
+{
+"_id": "65e46c2dd5138846358e2fa0", 
+"bonus_grant": 529, 
+"bonus_payment": 321, 
+"cost": 10910, 
+"date": "2024-03-03 12:25:17", 
+"final_status": "CLOSED", 
+"order_items": [{"id": "04e14e08b9fe5662c2414ae7", "name": "Мини кубдари с бараниной", "price": 250, "quantity": 4}, {"id": "129a492c90582164bc69f593", "name": "Кубдари с курицей и сыром", "price": 450, "quantity": 5}, {"id": "1c3744b29df6178f396fb4bd", "name": "Хинкали с бараниной 3 шт", "price": 270, "quantity": 5}, {"id": "0ff94c80a0816057090ed20c", "name": "Пахлава", "price": 290, "quantity": 4}, {"id": "3de9442da57a50ccfaf72866", "name": "Пхали с фасолью", "price": 200, "quantity": 3}, {"id": "22e74a698d81d8b5275e2ba7", "name": "Борщ", "price": 300, "quantity": 4}, {"id": "96ca4cf8b0217ce521be2389", "name": "Салат Тбилисо", "price": 450, "quantity": 5}, {"id": "bf65470ca47ae56177951569", "name": "Кубдари с говядиной с свининой", "price": 450, "quantity": 2}, {"id": "c92f41deb2e95a4187aad796", "name": "Грузинский хлеб шоти", "price": 50, "quantity": 4}], 
+"payment": 10910, 
+"restaurant": {"id": "a51e4e31ae4602047ec52534"}, 
+"statuses": [{"dttm": "2024-03-03 12:25:17", "status": "CLOSED"}, {"dttm": "2024-03-03 12:04:28", "status": "DELIVERING"}, {"dttm": "2024-03-03 11:36:56", "status": "COOKING"}, {"dttm": "2024-03-03 11:07:39", "status": "OPEN"}], 
+"update_ts": "2024-03-03 12:25:17", 
+"user": {"id": "626a81ce9a8cd1920641e268"}
+}
+
+{"user_id": 17, "order_id": "65e9d42b3117a13660747119", "order_date": "2024-03-07 14:50:19", "product_payments": [{"product_id": "6276e8cd0cf48b4cded00876", "product_name": "\u041c\u0418\u041d\u0418 \u041f\u0418\u0420\u041e\u0413 \u041a\u0418\u0428 \u0421 \u041a\u0423\u0420\u0418\u0426\u0415\u0419", "price": 120, "quantity": 4, "product_cost": 480, "bonus_payment": 22.0, "bonus_grant": 46}, {"product_id": "6276e8cd0cf48b4cded0087d", "product_name": "\u0421\u042d\u041d\u0414\u0412\u0418\u0427 \u041d\u0410 \u041a\u0420\u0423\u0410\u0421\u0421\u0410\u041d\u0415 \u041a\u0423\u0420\u0418\u0426\u0410", "price": 180, "quantity": 3, "product_cost": 540, "bonus_payment": 0.0, "bonus_grant": 54}]}
+{"user_id": 40, "order_id": "65e9cf7eb1115ca62761a5e2", "order_date": "2024-03-07 14:30:22", "product_payments": [{"product_id": "8d5c4d1598e06f880986abe4", "product_name": "\u0428\u0443\u0440\u043f\u0430 \u0438\u0437 \u0431\u0430\u0440\u0430\u043d\u0438\u043d\u044b", "price": 350, "quantity": 4, "product_cost": 1400, "bonus_payment": 260.0, "bonus_grant": 114}]}
+
+curl --location --request GET 'https://d5d04q7d963eapoepsqr.apigw.yandexcloud.net/restaurants?sort_field=id&sort_direction=asc&limit=50&offset=0' --header 'X-Nickname: yasakovivan' --header 'X-Cohort: 23' --header 'X-API-KEY: 25c27781-8fde-4b30-a22e-524044a7580f' 
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current Dload  Upload   Total   Spent    Left  Speed
+100   238    0   238    0     0    121      0 --:--:--  0:00:01 --:--:--   121
+[
+{"_id":"626a81cfefa404208fe9abae","name":"Кофейня №1"},
+{"_id":"a51e4e31ae4602047ec52534","name":"Кубдари"},
+{"_id":"ebfa4c9b8dadfc1da37ab58d","name":"PLove"},
+{"_id":"ef8c42c19b7518a9aebec106","name":"Вкус Индии"}]
+
+[
+{"order_id":"66153e3d3a904995dd984b9d","order_ts":"2024-04-09 13:10:21.101000","delivery_id":"2enye9h5rjqaxvi1t6vytpw","courier_id":"x9ytc9kfmlriqjueyi9rah4","address":"Ул. Льва Толстого, 4, кв. 192","delivery_ts":"2024-04-09 15:04:31.005000","rate":5,"sum":9030,"tip_sum":451},
+{"order_id":"66153d0f1af65aa7fd155e16","order_ts":"2024-04-09 13:05:19.785000","delivery_id":"k7vhhojn1p6nhd72j1yvpfa","courier_id":"qi8kuhkhyxjngukgnk04xnd","address":"Ул. Новая, 2, кв. 349","delivery_ts":"2024-04-09 14:23:25.327000","rate":5,"sum":840,"tip_sum":126},
+{"order_id":"66153bef3cbd648cbab807c9","order_ts":"2024-04-09 13:00:31.912000","delivery_id":"2ckirtbkw2s624uboo6c6v0","courier_id":"x9ytc9kfmlriqjueyi9rah4","address":"Ул. Льва Толстого, 4, кв. 163","delivery_ts":"2024-04-09 13:51:40.048000","rate":5,"sum":10580,"tip_sum":529},
+{"order_id":"66153ab30b44911610cb455e","order_ts":"2024-04-09 12:55:15.981000","delivery_id":"gp2l3xt9ie1dkj79sqb17eg","courier_id":"tjw4dqpg8oy3yj7atk2n9np","address":"Ул. Садовая, 10, кв. 447","delivery_ts":"2024-04-09 14:01:17.640000","rate":5,"sum":9120,"tip_sum":912},
+{"order_id":"6615398d0b9eccc8f402d3e1","order_ts":"2024-04-09 12:50:21.914000","delivery_id":"6uot2rxtkd5fqw07wid2siy","courier_id":"k2pumojmhpfj3m8qf0nf2ew","address":"Ул. Металлургов, 8, кв. 193","delivery_ts":"2024-04-09 14:04:23.628000","rate":5,"sum":1320,"tip_sum":66}
+]
