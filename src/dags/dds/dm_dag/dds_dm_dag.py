@@ -9,6 +9,8 @@ from dds.dm_dag.dm_products_loader import ProductLoader
 from dds.dm_dag.dm_orders_loader import OrdersLoader
 from dds.dm_dag.fct_product_sales import FactsLoader
 from dds.dm_dag.bonus_update import BonusLoader
+from dds.dm_dag.dm_coueriers_loader import CouriersLoader
+from dds.dm_dag.dm_deliverys_loader import DeliverysLoader
 from lib import ConnectionBuilder
 
 log = logging.getLogger(__name__)
@@ -37,6 +39,16 @@ def sprint5_dds_dm_dag():
 
     # Инициализируем объявленные таски.
     users_dms = load_users()
+
+    # Объявляем таск, который загружает данные.
+    @task(task_id="couriers_load")
+    def load_couriers():
+        # создаем экземпляр класса, в котором реализована логика.
+        couriers_loader = CouriersLoader(dwh_pg_connect, dwh_pg_connect, log)
+        couriers_loader.load_couriers()  # Вызываем функцию, которая перельет данные.
+
+    # Инициализируем объявленные таски.
+    couriers_dms = load_couriers()
 
     @task(task_id="rests_load")
     def load_rests():
@@ -74,6 +86,15 @@ def sprint5_dds_dm_dag():
     # Инициализируем объявленные таски.
     orders_dms = load_orders()
 
+    @task(task_id="deliverys_load")
+    def load_deliverys():
+        # создаем экземпляр класса, в котором реализована логика.
+        delivery_loader = DeliverysLoader(dwh_pg_connect, dwh_pg_connect, log)
+        delivery_loader.load_deliverys()  # Вызываем функцию, которая перельет данные.
+
+    # Инициализируем объявленные таски.
+    deliverys_dms = load_deliverys()
+
     @task(task_id="facts_load")
     def load_facts():
         # создаем экземпляр класса, в котором реализована логика.
@@ -84,9 +105,11 @@ def sprint5_dds_dm_dag():
     # Инициализируем объявленные таски.
     facts_dms = load_facts()
 
+
+
     # Далее задаем последовательность выполнения тасков.
     # Т.к. таск один, просто обозначим его здесь.
-    users_dms >> rests_dms >> tss_dms >> prods_dms >> orders_dms >> facts_dms # type: ignore
+    users_dms >> couriers_dms >> rests_dms >> prods_dms >> tss_dms >> orders_dms >> deliverys_dms >> facts_dms # type: ignore
 
 
 dds_dm_dag = sprint5_dds_dm_dag()
