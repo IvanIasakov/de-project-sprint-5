@@ -15,36 +15,25 @@ class CourierObj(BaseModel):
     courier_name: str
     update_ts: datetime
 
-class CourierObjStg(BaseModel):
-    id: int
-    id_courier: str
-    object_value: str
-    update_ts: datetime
-
 
 class CouriersOriginRepository:
     def __init__(self, pg: PgConnect) -> None:
         self._db = pg
 
     def list_couriers(self) -> List[CourierObj]:
-        with self._db.client().cursor(row_factory=class_row(CourierObjStg)) as cur:
+        with self._db.client().cursor(row_factory=class_row(CourierObj)) as cur:
             cur.execute(
                 """
-                    SELECT id, id_courier, object_value, update_ts
+                    SELECT id, 
+                           ((object_value::jsonb)->>'_id')::varchar as courier_id,
+                           ((object_value::jsonb)->>'name')::varchar as courier_name, 
+                           update_ts
                     FROM stg.deliverysystem_couriers
-                    --WHERE courier_id > %(threshold)s --Пропускаем те объекты, которые уже загрузили.
                     ORDER BY id_courier ASC; --Обязательна сортировка по id, т.к. id используем в качестве курсора.
-                """, {
-                    "threshold": 0
-                }
+                """
             )
-            objsin = cur.fetchall()
-            objs = []
-            for record in objsin:
-                 el=str2json(record.object_value)
-                 objs.append(CourierObj(**{'id':record.id,'courier_id':el['_id'],'courier_name':el['name'],'update_ts':record.update_ts}))
+            objs = cur.fetchall()
             
-            #objs=objsin
         return objs
 
 

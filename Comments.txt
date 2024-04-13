@@ -1,3 +1,35 @@
+Описание правок по результату учета замечаний 1 ревью:
+1. Формирование ветрины вынесено в Отдельный DAG fill_cdm_courier_ledger_dag.py
+  Вызывается PostgresOperator. Для удобства SQL скрипт для выполнения читается из папки .\SQL и файл скрипта должен называтся также как имя файла у запускающего DAG-файла
+
+2. В скрипте fill_cdm_courier_ledger_dag.SQL добавлен фильтр по дате - обрабатывается только текущий месяц - текущая дата передается через переменную {{ds}} AirFlow
+ts.ts>=date_trunc('month','{{ds}}'::timestamp) and ts.ts<date_trunc('month','{{ds}}'::timestamp + interval '1 month')
+Добавлено удаление данных за текущий месяц 
+DELETE FROM cdm.dm_courier_ledger where settlement_year=date_part('year', '{{ds}}'::timestamp) and settlement_month=date_part('month', '{{ds}}'::timestamp);
+
+3. В формировании DM из STG скрипты dm_deliverys_loader.py и dm_coueriers_loader.py изменен разбор JSON - перенесено в PostgreSQL как было рекомендовано.
+
+4. В скриптах формирования STG 
+delivery_system_dag\courier_loader.py и deliverys_loader.py 
+4.1 Добавлено получение параметров соединения API через connection Airfolow имя соединения HTTP - DELIVERY_SYSTEM_API
+HOST:d5d04q7d963eapoepsqr.apigw.yandexcloud.net
+В AIRFLOW заведены переменные из который передаются параметры
+DELIVERY_SYSTEM_BATCH_LIMIT	50
+DELIVERY_SYSTEM_DAYS_LOAD	7
+DELIVERY_SYSTEM_X-API-KEY	25c27781-8fde-4b30-a22e-524044a7580f
+DELIVERY_SYSTEM_X-Cohort	23
+DELIVERY_SYSTEM_X-Nickname	yasakovivan
+4.2 Добавлена передача параметров в GET через params
+4.3 Цикл перебора кусочков перенесен в функцию list
+
+По замечанию: Код в этом методе очень похож на код в courier_loader.py
+Для удобства в таких случаях стоит выделять общие компоненты и переиспользовать их 
+- Считаю не целесообразно для 2х выполнений писать общий класс, т.к. много изменений внутри функци придется оборачивать для стандатртизации функции, они разные по списку выходных параметров
+и обрабатываемых внутри входных вызовов API. Если бы было большое количество подобных однотипных вызовов можно было бы обернуть и учесть перегрузкой списка переменных.
+
+
+
+===============================================
 Пакет для сдачи проекта 5 спринта, Курс Инженер Данных
 1.1 Созданы DDL таблиц для загрузки данных из системы Доставки:
 src\dags\stg\init_schema_dag\ddl

@@ -1,3 +1,5 @@
+from airflow.hooks.base import BaseHook
+from airflow.models.variable import Variable
 from logging import Logger
 from typing import List
 
@@ -11,6 +13,7 @@ from datetime import datetime
 import requests
 import time
 
+
 class CourierObj(BaseModel):
     id: int
     id_courier: str
@@ -21,32 +24,47 @@ class CourierObj(BaseModel):
 
 class CourierOriginRepository:
     def __init__(self,log: Logger) -> None:
-        self.HEADERS = {"X-API-KEY": '25c27781-8fde-4b30-a22e-524044a7580f',
-                        "X-Nickname": 'yasakovivan',
-                        "X-Cohort": '23'}
-        self.API_URL = "https://d5d04q7d963eapoepsqr.apigw.yandexcloud.net/couriers?sort_field=%s&sort_direction=%s&limit=%d&offset=%d"
-        self.log=log
+         self.log=log
 
-    def list_couriers(self, offset: int, limit: int) -> List[CourierObj]:
-                api_url = self.API_URL % ('_id', 'asc', limit, offset)
-                session = requests.Session()
-                for i in range(5):
-                    try:
-                        response = session.get(api_url, headers=self.HEADERS)
-                        response.raise_for_status()
-                    except requests.exceptions.ConnectionError as err:
-                        self.log.error(err)
-                        time.sleep(10)
-                    if response.status_code == 200:
-                        list_response = list(response.json())
-                        self.log.info('Recieved part load objects: %s' , len(list_response))
-                        break
-                    elif i == 4:
-                        raise TimeoutError("TimeoutError fail to get deliveries.")
-                
+    def list_couriers(self, limit: int) -> List[CourierObj]:
+                api_conn = BaseHook.get_connection('DELIVERY_SYSTEM_API')
+                x_api_key = Variable.get('DELIVERY_SYSTEM_X-API-KEY')
+                x_nickname= Variable.get('DELIVERY_SYSTEM_X-Nickname')
+                x_cohotrt = Variable.get('DELIVERY_SYSTEM_X-Cohort')
+                X_HEADERS={"X-API-KEY": x_api_key,
+                           "X-Nickname": x_nickname,
+                           "X-Cohort": x_cohotrt}
+                api_endpoint = api_conn.host
+                method_url = '/couriers'
+                api_url='https://'+ api_endpoint + method_url
                 OObj=[]
-                for el in list_response:
-                     OObj.append(CourierObj(**{'id':0,'id_courier':el['_id'],'object_value':str(el).replace("'","\""),'update_ts':datetime.now()}))
+                offset=0
+                while True:
+                    x_params = {'sort_field': "_id"
+                          ,'sort_direction': "asc"
+                          ,'limit': limit
+                          ,'offset': offset}
+                    offset+=limit
+                    
+                    session = requests.Session()
+                    for i in range(5):
+                        try:
+                            response = session.get(api_url, headers=X_HEADERS,params=x_params)
+                            response.raise_for_status()
+                        except requests.exceptions.ConnectionError as err:
+                            self.log.error(err)
+                            time.sleep(10)
+                        if response.status_code == 200:
+                            list_response = list(response.json())
+                            self.log.info('Recieved part load objects: %s' , len(list_response))
+                            break
+                        elif i == 4:
+                            raise TimeoutError("TimeoutError fail to get deliveries.")
+                    for el in list_response:
+                         OObj.append(CourierObj(**{'id':0,'id_courier':el['_id'],'object_value':str(el).replace("'","\""),'update_ts':datetime.now()}))
+               
+                    if len(list_response)<limit:
+                         break                
                 return OObj
 
 
@@ -95,16 +113,9 @@ class CourierLoader:
                 wf_setting = EtlSetting(id=0, workflow_key=self.WF_KEY, workflow_settings={self.LAST_LOADED_ID_KEY: -1})
 
             # Вычитываем очередную пачку объектов.
-            last_date = wf_setting.workflow_settings[self.LAST_LOADED_ID_KEY]
+            #last_date = wf_setting.workflow_settings[self.LAST_LOADED_ID_KEY]
             
-            last_loaded=0
-            load_queue=[]
-            while True:
-                    part_queue = self.origin.list_couriers(last_loaded, self.BATCH_LIMIT)
-                    last_loaded+=self.BATCH_LIMIT
-                    load_queue = load_queue + part_queue
-                    if len(part_queue)<self.BATCH_LIMIT:
-                         break
+            load_queue=self.origin.list_couriers(self.BATCH_LIMIT)
             
             self.log.info(f"Found {len(load_queue)} couriers to load.")
             if not load_queue:

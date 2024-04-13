@@ -22,11 +22,6 @@ class DeliveryObj(BaseModel):
     total_sum: float
     update_ts: datetime
 
-class DeliveryObjStg(BaseModel):
-    id: int
-    delivery_id: str
-    object_value: str
-    update_ts: datetime
 
 
 class DeliveryOriginRepository:
@@ -34,10 +29,19 @@ class DeliveryOriginRepository:
         self._db = pg
 
     def list_deliverys(self, user_threshold: datetime) -> List[DeliveryObj]:
-        with self._db.client().cursor(row_factory=class_row(DeliveryObjStg)) as cur:
+        with self._db.client().cursor(row_factory=class_row(DeliveryObj)) as cur:
             cur.execute(
                 """
-                    SELECT id, delivery_id, object_value, update_ts
+                    SELECT id,  
+                    ((object_value::jsonb)->>'courier_id')::varchar as xid_courier,
+                    ((object_value::jsonb)->>'order_id')::varchar as xid_order,
+                    ((object_value::jsonb)->>'delivery_id')::varchar as delivery_key,
+                    ((object_value::jsonb)->>'delivery_ts')::timestamp as delivery_ts,
+                    ((object_value::jsonb)->>'address')::varchar as adress,
+                    ((object_value::jsonb)->'rate')::int4 as rate,
+                    ((object_value::jsonb)->'tip_sum')::numeric(14,2) as tip_sum,
+                    ((object_value::jsonb)->'sum')::numeric(14,2) as total_sum
+                    ,update_ts
                     FROM stg.deliverysystem_deliverys
                     WHERE update_ts > %(threshold)s --Пропускаем те объекты, которые уже загрузили.
                     ORDER BY update_ts ASC; --Обязательна сортировка по id, т.к. id используем в качестве курсора.
@@ -45,11 +49,7 @@ class DeliveryOriginRepository:
                     "threshold": user_threshold
                 }
             )
-            objsin = cur.fetchall()
-            objs = []
-            for record in objsin:
-                 el=str2json(record.object_value)
-                 objs.append(DeliveryObj(**{'id':record.id,'xid_courier':el['courier_id'],'xid_order':el['order_id'],'delivery_key':el['delivery_id'],'delivery_ts':el['delivery_ts'],'adress':el['address'],'rate':el['rate'],'tip_sum':el['tip_sum'],'total_sum':el['sum'],'update_ts':record.update_ts}))
+            objs = cur.fetchall()
             
         return objs
 

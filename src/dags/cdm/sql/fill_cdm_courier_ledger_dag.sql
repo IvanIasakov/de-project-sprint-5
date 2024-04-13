@@ -1,3 +1,4 @@
+DELETE FROM cdm.dm_courier_ledger where settlement_year=date_part('year', '{{ds}}'::timestamp) and settlement_month=date_part('month', '{{ds}}'::timestamp);
 INSERT INTO cdm.dm_courier_ledger
 (courier_id, courier_name, settlement_year, settlement_month, orders_count, orders_total_sum, rate_avg, order_processing_fee, courier_order_sum, courier_tips_sum, courier_reward_sum)
 (with CRDEL as 
@@ -8,7 +9,8 @@ from  dds.dm_deliverys as dv
 left join dds.dm_orders ord on dv.order_id = ord.id 
 left join dds.dm_timestamps ts on ord.timestamp_id=ts.id
 left join dds.dm_couriers cr on dv.courier_id = cr.id 
---where ord.order_status!='CANCELLED'
+where ts.ts>=date_trunc('month','{{ds}}'::timestamp) and ts.ts<date_trunc('month','{{ds}}'::timestamp + interval '1 month')
+--and ord.order_status!='CANCELLED'
 ),
 CRDELSUM as
 (select 

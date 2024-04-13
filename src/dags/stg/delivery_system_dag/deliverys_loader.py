@@ -1,3 +1,5 @@
+from airflow.hooks.base import BaseHook
+from airflow.models.variable import Variable
 from logging import Logger
 from typing import List
 
@@ -18,38 +20,58 @@ class DeliveryObj(BaseModel):
     update_ts: datetime
 
 
-
 class DeliveryOriginRepository:
     def __init__(self,log: Logger) -> None:
-        self.HEADERS = {"X-API-KEY": '25c27781-8fde-4b30-a22e-524044a7580f',
-                        "X-Nickname": 'yasakovivan',
-                        "X-Cohort": '23'}
-        self.API_URL = "https://d5d04q7d963eapoepsqr.apigw.yandexcloud.net/deliveries?from=%s&to=%s&sort_field=%s&sort_direction=%s&limit=%d&offset=%d"
-        self.log=log
+         self.log=log
 
-    def list_deliverys(self, offset: int, limit: int,daysnum: int) -> List[DeliveryObj]:
+    def list_deliverys(self) -> List[DeliveryObj]:
+                daysnum = int(Variable.get('DELIVERY_SYSTEM_DAYS_LOAD'))
+                limit = int(Variable.get('DELIVERY_SYSTEM_BATCH_LIMIT'))
                 from_dt=(datetime.now()-timedelta(days=daysnum)).replace(microsecond=0) # начальная дата выгрузки
                 to_dt=datetime.now().replace(microsecond=0) # конечная дата выгрузки 
-                api_url = self.API_URL % (from_dt,to_dt,'date', 'asc', limit, offset)
-                session = requests.Session()
-                for i in range(5):
-                    try:
-                        response = session.get(api_url, headers=self.HEADERS)
-                        response.raise_for_status()
-                    except requests.exceptions.ConnectionError as err:
-                        self.log.error(err)
-                        time.sleep(10)
-                    if response.status_code == 200:
-                        list_response = list(response.json())
-                        self.log.info('Recieved part load objects: %s' , len(list_response))
-                        break
-                    elif i == 4:
-                        raise TimeoutError("TimeoutError fail to get deliveries.")
-                
+                api_conn = BaseHook.get_connection('DELIVERY_SYSTEM_API')
+                x_api_key = Variable.get('DELIVERY_SYSTEM_X-API-KEY')
+                x_nickname= Variable.get('DELIVERY_SYSTEM_X-Nickname')
+                x_cohotrt = Variable.get('DELIVERY_SYSTEM_X-Cohort')
+                X_HEADERS={"X-API-KEY": x_api_key,
+                           "X-Nickname": x_nickname,
+                           "X-Cohort": x_cohotrt}
+                api_endpoint = api_conn.host
+                method_url = '/deliveries'
+                api_url='https://'+ api_endpoint + method_url
                 OObj=[]
-                for el in list_response:
-                     OObj.append(DeliveryObj(**{'id':0,'delivery_id':el['delivery_id'],'object_value':str(el).replace("'","\""),'update_ts':datetime.now()}))
+                offset=0
+                while True:
+                    x_params = {
+                           'from':from_dt
+                          ,'to':to_dt
+                          ,'sort_field': "date"
+                          ,'sort_direction': "asc"
+                          ,'limit': limit
+                          ,'offset': offset}
+                    offset+=limit
+                    
+                    session = requests.Session()
+                    for i in range(5):
+                        try:
+                            response = session.get(api_url, headers=X_HEADERS,params=x_params)
+                            response.raise_for_status()
+                        except requests.exceptions.ConnectionError as err:
+                            self.log.error(err)
+                            time.sleep(10)
+                        if response.status_code == 200:
+                            list_response = list(response.json())
+                            self.log.info('Recieved part load objects: %s' , len(list_response))
+                            break
+                        elif i == 4:
+                            raise TimeoutError("TimeoutError fail to get deliveries.")
+                    for el in list_response:
+                         OObj.append(DeliveryObj(**{'id':0,'delivery_id':el['delivery_id'],'object_value':str(el).replace("'","\""),'update_ts':datetime.now()}))
+                    
+                    if len(list_response)<limit:
+                         break                
                 return OObj
+
 
 
 class DeliveryDestRepository:
@@ -94,20 +116,13 @@ class DeliveryLoader:
             # Если настройки еще нет, заводим ее.
             wf_setting = self.settings_repository.get_setting(conn, self.WF_KEY)
             if not wf_setting:
-                wf_setting = EtlSetting(id=0, workflow_key=self.WF_KEY, workflow_settings={self.LAST_LOADED_ID_KEY: datetime(2022, 1, 1).isoformat()})
+                wf_setting = EtlSetting(id=0, workflow_key=self.WF_KEY, workflow_settings={self.LAST_LOADED_ID_KEY: -1})
 
             # Вычитываем очередную пачку объектов.
-            last_date = wf_setting.workflow_settings[self.LAST_LOADED_ID_KEY]
+            #last_date = wf_setting.workflow_settings[self.LAST_LOADED_ID_KEY]
             
-            last_loaded=0
-            load_queue=[]
-            while True:
-                    part_queue = self.origin.list_deliverys(last_loaded, self.BATCH_LIMIT,daysnum)
-                    last_loaded+=self.BATCH_LIMIT
-                    load_queue = load_queue + part_queue
-                    if len(part_queue)<self.BATCH_LIMIT:
-                         break
-            
+            load_queue=self.origin.list_deliverys()
+                        
             self.log.info(f"Found {len(load_queue)} deliverys to load.")
             if not load_queue:
                 self.log.info("Quitting.")
